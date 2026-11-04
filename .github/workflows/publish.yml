@@ -1,0 +1,50 @@
+# 打 tag（如 v0.1.0）推送后自动构建并发布到 PyPI。
+#
+# 一次性前置配置（网页操作，与代码无关）：
+#   1. 在 PyPI 注册账号，创建项目占位或直接等首次发布自动创建；
+#   2. PyPI -> Account settings -> Publishing -> Add a new pending publisher，
+#      填入 GitHub 仓库 owner/repo、workflow 文件名 publish.yml、environment 名称 pypi；
+#   3. GitHub 仓库 Settings -> Environments 新建名为 pypi 的环境（可加人工审批）。
+# 之后每次发版只需：git tag v0.x.x && git push --tags
+
+name: Publish to PyPI
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write  # Trusted Publisher 必需的 OIDC 授权
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,0 +1,73 @@
+# gzcli 子指令注册配置示例
+version: 1
+
+# 未来 Web 管理站点地址，配置后 gzcli update 可从站点拉取最新配置
+# registry:
+#   url: https://clihub.example.com/api/config
+
+commands:
+  img_detect:                       # 一级子指令：团队命名空间
+    description: 图像检测能力集（示例团队）
+    service:
+      base_url: http://127.0.0.1:8765
+      timeout: 30
+      auth:
+        type: header_token
+        header: X-API-Token
+        token_env: GZCLI_IMG_TOKEN  # 凭证从环境变量读取，不进配置文件
+    subcommands:
+      obj_detect:                   # 二级子指令：gzcli img_detect obj_detect
+        description: 图像目标检测
+        method: POST
+        path: /v1/detect
+        args:
+          img:
+            type: file
+            to: form.img            # multipart 上传
+            required: true
+            help: 待检测图片路径
+          threshold:
+            type: float
+            to: form.threshold
+            default: 0.5
+            help: 置信度阈值
+      img_ocr:
+        description: 图像 OCR（演示纯 JSON 调用）
+        method: POST
+        path: /v1/ocr
+        args:
+          img_url:
+            type: string
+            to: json.img_url
+            required: true
+            help: 图片 URL
+          lang:
+            type: string
+            to: json.lang
+            default: zh
+            help: 识别语言
+
+  data_team:                      # 纯 script 命名空间，无需 service
+    description: 数据团队工具集（script 后端示例）
+    subcommands:
+      clean_csv:
+        type: script
+        description: CSV 清洗工具
+        script:
+          source: ./examples/tools/clean_csv.py   # 本地路径；也支持 git+URL@tag
+          timeout: 60
+        args:
+          input:
+            type: file
+            to: argv.input        # 映射为脚本的 --input <绝对路径>
+            required: true
+            help: 输入 CSV 路径
+          strict:
+            type: bool
+            to: argv.strict       # 映射为 --strict 开关
+            help: 严格模式
+          team:
+            type: string
+            to: env.DATA_TEAM     # 注入子进程环境变量
+            default: data-team
+            help: 团队标识（演示 env 注入）
