@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "clihub"
+name = "gzcli"
 version = "0.1.0"
 description = "CLIHub: 一个父指令统一网关，将团队 HTTP 接口以子指令方式对外提供"
 readme = "README.md"
